@@ -700,7 +700,7 @@ class CustomerApp {
   // LIVE ORDER TRACKER
   // ===========================================================
   loadSavedOrder() {
-    const saved = localStorage.getItem(`coffee_culture_order_${this.tableId}`);
+    const saved = localStorage.getItem(`coffee_culture_order_v2_${this.tableId}`);
     if (saved) {
       try {
         this.activeOrder = JSON.parse(saved);
@@ -715,7 +715,7 @@ class CustomerApp {
 
   saveActiveOrder() {
     if (this.activeOrder) {
-      localStorage.setItem(`coffee_culture_order_${this.tableId}`, JSON.stringify(this.activeOrder));
+      localStorage.setItem(`coffee_culture_order_v2_${this.tableId}`, JSON.stringify(this.activeOrder));
       this.saveOrderToHistory(this.activeOrder);
       const trackBtn = document.getElementById('btn-view-tracker');
       if (trackBtn) trackBtn.style.display = 'flex';
@@ -724,7 +724,7 @@ class CustomerApp {
 
   getOrderHistory() {
     try {
-      return JSON.parse(localStorage.getItem(`coffee_culture_order_history_${this.tableId}`) || '[]');
+      return JSON.parse(localStorage.getItem(`coffee_culture_order_history_v2_${this.tableId}`) || '[]');
     } catch (e) {
       return [];
     }
@@ -735,7 +735,7 @@ class CustomerApp {
     const existingIndex = history.findIndex(item => item.id === order.id);
     if (existingIndex >= 0) history[existingIndex] = order;
     else history.unshift(order);
-    localStorage.setItem(`coffee_culture_order_history_${this.tableId}`, JSON.stringify(history.slice(0, 20)));
+    localStorage.setItem(`coffee_culture_order_history_v2_${this.tableId}`, JSON.stringify(history.slice(0, 20)));
   }
 
   openOrderHistory() {
@@ -753,6 +753,7 @@ class CustomerApp {
         <div style="font-size:0.75rem;color:var(--text-muted);margin:5px 0;">${date}</div>
         <div style="font-size:0.8rem;color:var(--text-main);">${items}</div>
         <div style="font-size:0.75rem;color:var(--accent-emerald);text-transform:capitalize;margin-top:6px;">${status}</div>
+        ${order.status === 'pending' ? `<button class="secondary-action-btn" style="margin-top:8px;padding:6px 10px;" onclick="customerApp.cancelOrderFromHistory('${order.id}')">Cancel This Order</button>` : ''}
       </div>`;
     }).join('') : '<p style="color:var(--text-muted);text-align:center;padding:30px 10px;">No orders yet for this table.</p>';
     document.getElementById('order-history-modal')?.classList.add('active');
@@ -760,6 +761,13 @@ class CustomerApp {
 
   closeOrderHistory() {
     document.getElementById('order-history-modal')?.classList.remove('active');
+  }
+
+  async cancelOrderFromHistory(orderId) {
+    const order = this.getOrderHistory().find(item => item.id === orderId);
+    if (!order || order.status !== 'pending' || !window.confirm(`Cancel ${order.orderNumber || 'this order'}?`)) return;
+    await this.cancelOrderById(order);
+    this.openOrderHistory();
   }
 
   openTrackerModal() {
@@ -840,7 +848,11 @@ class CustomerApp {
     if (!this.activeOrder || this.activeOrder.status !== 'pending') return;
     if (!window.confirm('Cancel this order?')) return;
 
-    const response = await fetch(`/api/orders/${encodeURIComponent(this.activeOrder.id)}/cancel`, {
+    await this.cancelOrderById(this.activeOrder);
+  }
+
+  async cancelOrderById(order) {
+    const response = await fetch(`/api/orders/${encodeURIComponent(order.id)}/cancel`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tableId: this.tableId })
@@ -850,9 +862,13 @@ class CustomerApp {
       alert(result.error || 'This order cannot be cancelled.');
       return;
     }
-    this.activeOrder = result;
-    this.saveActiveOrder();
-    this.renderTracker();
+    if (this.activeOrder?.id === result.id) {
+      this.activeOrder = result;
+      this.saveActiveOrder();
+      this.renderTracker();
+    } else {
+      this.saveOrderToHistory(result);
+    }
   }
 
   // ===========================================================

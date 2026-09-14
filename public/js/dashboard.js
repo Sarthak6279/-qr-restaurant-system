@@ -10,6 +10,7 @@ class DashboardApp {
     this.menu = [];
     this.tables = [];
     this.serviceRequests = [];
+    this.monthlyRevenue = 0;
     this._ready = true; // Enabled for seamless access
     this.isAdminRoute = window.location.pathname === '/admin';
     this.refreshTimer = null;
@@ -18,6 +19,7 @@ class DashboardApp {
       this.connectWebSocket();
     }
     this.setupFormListeners();
+    document.getElementById('btn-reset-day')?.addEventListener('click', () => this.resetDay());
     this.startTimerTicker();
     this.loadOfflineOrdersIntoDashboard();
   }
@@ -43,9 +45,35 @@ class DashboardApp {
         this.orders = orders;
         this.renderAll();
       }
+      await this.refreshStats();
     } catch (error) {
       console.warn('Dashboard order refresh unavailable:', error);
     }
+  }
+
+  async refreshStats() {
+    try {
+      const response = await fetch('/api/stats', { credentials: 'same-origin' });
+      if (!response.ok) return;
+      const stats = await response.json();
+      this.monthlyRevenue = Number(stats.monthlyRevenue || 0);
+      this.renderStats();
+    } catch (error) {
+      console.warn('Dashboard stats refresh unavailable:', error);
+    }
+  }
+
+  async resetDay() {
+    if (!window.confirm('Start a new day? Current orders and service alerts will be cleared.')) return;
+    const response = await fetch('/api/day/reset', { method: 'POST', credentials: 'same-origin' });
+    if (!response.ok) {
+      alert('Only the owner can reset the day.');
+      return;
+    }
+    this.orders = [];
+    this.serviceRequests = [];
+    this.renderAll();
+    alert('New day started. Monthly revenue is preserved.');
   }
 
   loadOfflineOrdersIntoDashboard() {
@@ -171,6 +199,7 @@ class DashboardApp {
     ).size;
 
     this.setText('stat-total-revenue',  '₹' + Math.round(totalRev));
+    this.setText('stat-monthly-revenue', '₹' + Math.round(this.monthlyRevenue || 0));
     this.setText('stat-active-orders',  activeOrders.length);
     this.setText('stat-ready-orders',   readyOrders.length);
     this.setText('stat-active-tables',  activeTables);

@@ -876,126 +876,12 @@ let tables = [
   { id: "12", name: "VIP-1", name: "VIP Lounge A", section: "VIP Suite", seats: 8, status: "available" }
 ];
 
-let orders = [
-  {
-    "id": "ord-1001",
-    "orderNumber": "#1001",
-    "tableId": "4",
-    "tableName": "Table 4",
-    "customerName": "Rohan S.",
-    "items": [
-      {
-        "id": "cc-bev-1",
-        "name": "Classic Cappuccino",
-        "price": 140,
-        "quantity": 2,
-        "selectedAddons": [
-          {
-            "name": "Caramel Drizzle",
-            "price": 30
-          }
-        ],
-        "notes": "Extra hot please"
-      },
-      {
-        "id": "cc-str-2",
-        "name": "Peri Peri Loaded Fries",
-        "price": 190,
-        "quantity": 1,
-        "selectedAddons": [
-          {
-            "name": "Extra Melted Cheddar",
-            "price": 40
-          }
-        ],
-        "notes": "Crispy"
-      },
-      {
-        "id": "cc-piz-1",
-        "name": "Classic Margherita Pizza",
-        "price": 240,
-        "quantity": 1,
-        "selectedAddons": [],
-        "notes": ""
-      }
-    ],
-    "subtotal": 740,
-    "tax": 37,
-    "tip": 50,
-    "total": 827,
-    "status": "preparing",
-    "specialInstructions": "Table on the window side",
-    "paymentStatus": "paid",
-    "createdAt": "2026-09-13T11:04:37.994Z",
-    "updatedAt": "2026-09-13T11:08:37.995Z"
-  },
-  {
-    "id": "ord-1002",
-    "orderNumber": "#1002",
-    "tableId": "7",
-    "tableName": "Table 7",
-    "customerName": "Pooja & Friends",
-    "items": [
-      {
-        "id": "cc-siz-1",
-        "name": "Signature Veg Sizzler",
-        "price": 340,
-        "quantity": 1,
-        "selectedAddons": [
-          {
-            "name": "Extra Sizzler Sauce",
-            "price": 40
-          }
-        ],
-        "notes": "Spicy sauce"
-      },
-      {
-        "id": "cc-bev-2",
-        "name": "Signature Cold Coffee",
-        "price": 150,
-        "quantity": 2,
-        "selectedAddons": [
-          {
-            "name": "Vanilla Ice Cream Scoop",
-            "price": 40
-          }
-        ],
-        "notes": ""
-      },
-      {
-        "id": "cc-des-1",
-        "name": "Sizzling Brownie with Ice Cream",
-        "price": 180,
-        "quantity": 1,
-        "selectedAddons": [],
-        "notes": "Serve after sizzler"
-      }
-    ],
-    "subtotal": 940,
-    "tax": 47,
-    "tip": 60,
-    "total": 1047,
-    "status": "pending",
-    "specialInstructions": "Birthday celebration hangout",
-    "paymentStatus": "unpaid",
-    "createdAt": "2026-09-13T11:12:37.995Z",
-    "updatedAt": "2026-09-13T11:12:37.995Z"
-  }
-];
+let orders = [];
+let revenueLedger = [];
 
-let serviceRequests = [
-  {
-    id: "req-1",
-    tableId: "5",
-    tableName: "Table 5",
-    type: "water", // waiter | water | bill | clean
-    message: "Requested extra water & napkins",
-    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    resolved: false
-  }
-];
+let serviceRequests = [];
 
-let orderCounter = 1003;
+let orderCounter = 1001;
 
 let banquetLeads = [
   {
@@ -1016,6 +902,11 @@ let banquetLeads = [
 // -------------------------------------------------------------
 // WebSocket Real-Time Broadcast Hub
 // -------------------------------------------------------------
+function recordCompletedOrder(order) {
+  if (!order || order.status !== 'completed' || revenueLedger.some(item => item.id === order.id)) return;
+  revenueLedger.push({ id: order.id, total: Number(order.total || 0), completedAt: order.updatedAt || new Date().toISOString() });
+}
+
 function broadcast(data) {
   const payload = JSON.stringify(data);
   wss.clients.forEach((client) => {
@@ -1130,6 +1021,7 @@ function handleWsMessage(ws, data) {
             if (table) table.status = "available";
           }
         }
+        recordCompletedOrder(order);
 
         broadcast({
           type: 'ORDER_STATUS_CHANGED',
@@ -1332,6 +1224,15 @@ app.get('/api/orders', requireOwner, (req, res) => {
   res.json(orders);
 });
 
+app.post('/api/day/reset', requireOwner, (req, res) => {
+  orders = [];
+  serviceRequests = [];
+  orderCounter = 1001;
+  tables.forEach(table => { table.status = 'available'; });
+  broadcast({ type: 'INIT_SYNC', menu: menuItems, orders, tables, serviceRequests, banquetLeads });
+  res.json({ reset: true, message: 'New day started. Orders and service alerts cleared.' });
+});
+
 app.post('/api/orders', (req, res) => {
   const newOrder = {
     id: `ord-${Date.now()}`,
@@ -1380,6 +1281,10 @@ app.get('/api/stats', requireOwner, (req, res) => {
   const activeOrders = orders.filter(o => o.status === 'pending' || o.status === 'preparing');
 
   const itemFrequency = {};
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthlyRevenue = revenueLedger
+    .filter(order => String(order.completedAt).slice(0, 7) === currentMonth)
+    .reduce((sum, order) => sum + order.total, 0);
   orders.forEach(o => {
     (o.items || []).forEach(item => {
       itemFrequency[item.name] = (itemFrequency[item.name] || 0) + (item.quantity || 1);
@@ -1397,6 +1302,7 @@ app.get('/api/stats', requireOwner, (req, res) => {
     readyOrders: orders.filter(o => o.status === 'ready').length,
     completedOrdersCount: completedOrders.length,
     totalRevenue: totalRevenue.toFixed(2),
+    monthlyRevenue: monthlyRevenue.toFixed(2),
     topDishes
   });
 });
