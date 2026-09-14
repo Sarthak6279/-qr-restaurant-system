@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Coffee Culture – The Ristorante Lounge | Jabalpur</title>
+  <meta name="description" content="Coffee Culture Jabalpur — Artisanal Coffees, Gourmet Sizzlers, Italian Pastas & Wood-Fired Pizzas. Scan table QR code to order directly or view live kitchen display.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#140d09">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+</head>
+<body class="coffee-culture-theme">
+
+  <div class="owner-login-overlay" id="owner-login-overlay" aria-hidden="true">
+    <form class="owner-login-dialog" id="owner-login-form">
+      <div class="owner-login-mark">🔐</div>
+      <h2>Owner Access</h2>
+      <p>Enter the owner ID and password to open restaurant controls.</p>
+      <label for="owner-id">Owner ID</label>
+      <input id="owner-id" name="ownerId" type="text" autocomplete="username" value="owner" required>
+      <label for="owner-password">Password</label>
+      <input id="owner-password" name="password" type="password" autocomplete="current-password" required>
+      <div class="owner-login-error" id="owner-login-error" role="alert"></div>
+      <button class="primary-action-btn" type="submit">Unlock Dashboard</button>
+    </form>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TOP APP HEADER / BAR (Persistent across entire experience)   -->
+  <!-- ============================================================ -->
+  <header class="app-top-header">
+    <div class="header-left">
+      <button class="btn-toggle-sidebar" id="btn-open-sidebar" aria-label="Toggle Navigation Sidebar">
+        <span class="hamburger-icon">☰</span>
+        <span class="btn-text">Menu &amp; Tools</span>
+      </button>
+      <div class="header-brand-box">
+        <span class="header-logo-icon">☕</span>
+        <div class="header-brand-info">
+          <span class="brand-title">Coffee Culture</span>
+          <span class="brand-sub">The Ristorante Lounge • Jabalpur</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick navigation tabs right in the header for 1-click access -->
+    <div class="header-quick-tabs">
+      <button class="quick-tab-btn sidebar-nav-item" data-target-view="customer">
+        <span>☕</span> Menu
+      </button>
+      <button class="quick-tab-btn sidebar-nav-item" data-target-view="kitchen">
+        <span>👨‍🍳</span> Kitchen KDS
+        <span class="header-nav-badge" id="sidebar-badge-kitchen">0</span>
+      </button>
+      <button class="quick-tab-btn sidebar-nav-item" data-target-view="qr">
+        <span>🏷️</span> QR Standees
+      </button>
+    </div>
+
+    <div class="header-right">
+      <div class="network-status-indicator" id="top-network-pill" title="Network & Offline Cache Status">
+        <span class="live-dot"></span> Online
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- UNIFIED NAVIGATION SIDEBAR (Accessible everywhere)           -->
+  <!-- ============================================================ -->
+  <aside class="unified-sidebar" id="unified-sidebar">
+    <div class="sidebar-header-branding">
+      <div class="brand-emblem-wrapper">
+        <img src="assets/coffee_culture_wall.png" alt="Coffee Culture Jabalpur" class="sidebar-brand-thumb" />
+      </div>
+      <div class="sidebar-brand-text">
+        <h3>Coffee Culture</h3>
+        <p>The Ristorante Lounge</p>
+        <span class="location-tag">📍 Sadar, Jabalpur</span>
+      </div>
+      <button class="sidebar-close-mobile" id="btn-close-sidebar" type="button" title="Close Sidebar" aria-label="Close Sidebar" onclick="document.getElementById('unified-sidebar').classList.remove('mobile-open');document.getElementById('unified-sidebar').classList.add('sidebar-hidden');document.querySelectorAll('.sidebar-backdrop').forEach(function(backdrop){backdrop.classList.remove('active')});document.body.classList.add('sidebar-is-hidden');">&times;</button>
+    </div>
+
+    <!-- Active Table Selector -->
+    <div class="sidebar-table-picker">
+      <label for="sidebar-table-select">🍽️ Current Ordering Table</label>
+      <select id="sidebar-table-select">
+        <option value="1">Table 1 (Main Dining - 2 Seats)</option>
+        <option value="2">Table 2 (Main Dining - 4 Seats)</option>
+        <option value="3">Table 3 (Main Dining - 4 Seats)</option>
+        <option value="4" selected>Table 4 (Main Dining - 6 Seats)</option>
+        <option value="5">Table 5 (Window Booth - 4 Seats)</option>
+        <option value="6">Table 6 (Window Booth - 4 Seats)</option>
+        <option value="7">Table 7 (Window Booth - 6 Seats)</option>
+        <option value="8">Table 8 (Bar High Top - 2 Seats)</option>
+        <option value="9">Table 9 (Bar High Top - 2 Seats)</option>
+        <option value="10">Table 10 (Outdoor Patio - 4 Seats)</option>
+        <option value="11">Table 11 (Outdoor Patio - 6 Seats)</option>
+        <option value="12">VIP Lounge A (Executive - 8 Seats)</option>
+      </select>
+    </div>
+
+    <!-- Main Navigation List -->
+    <nav class="sidebar-nav-list">
+      <div class="nav-section-title">Navigation Views</div>
+      <a href="#" class="sidebar-nav-item active" data-target-view="customer">
+        <span class="nav-icon">☕</span>
+        <div class="nav-content">
+          <span class="nav-label">Customer Digital Menu</span>
+          <span class="nav-desc">Table QR ordering &amp; live cart</span>
+        </div>
+      </a>
+
+      <a href="#" class="sidebar-nav-item" data-target-view="kitchen">
+        <span class="nav-icon">👨‍🍳</span>
+        <div class="nav-content">
+          <span class="nav-label">Live Kitchen Dashboard</span>
+          <span class="nav-desc">KDS live order tickets &amp; timer</span>
+        </div>
+      </a>
+
+      <a href="#" class="sidebar-nav-item" data-target-view="qr">
+        <span class="nav-icon">🏷️</span>
+        <div class="nav-content">
+          <span class="nav-label">QR Code Standees</span>
+          <span class="nav-desc">Printable luxury table tent cards</span>
+        </div>
+      </a>
+
+      <a href="#" class="sidebar-nav-item" data-target-view="overview">
+        <span class="nav-icon">📊</span>
+        <div class="nav-content">
+          <span class="nav-label">Restaurant Overview</span>
+          <span class="nav-desc">Revenue in ₹ &amp; today's stats</span>
+        </div>
+      </a>
+
+      <a href="#" class="sidebar-nav-item" data-target-view="menu">
+        <span class="nav-icon">📋</span>
+        <div class="nav-content">
+          <span class="nav-label">Menu &amp; Stock Manager</span>
+          <span class="nav-desc">Toggle availability &amp; add items</span>
+        </div>
+      </a>
+
+      <div class="nav-section-title" style="margin-top:14px;">Special Features</div>
+      <a href="#" class="sidebar-nav-item highlight-item" data-target-view="budget">
+        <span class="nav-icon">💡</span>
+        <div class="nav-content">
+          <span class="nav-label">Budget Dining Guide</span>
+          <span class="nav-desc">₹250-₹400, ₹450-₹700 &amp; ₹40 Promos</span>
+        </div>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <p class="cafe-address-text">Opp. Garrison Ground, Sadar, Jabalpur</p>
+      <p class="cafe-copyright">&copy; Coffee Culture – The Ristorante Lounge</p>
+    </div>
+  </aside>
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div class="sidebar-backdrop"></div>
+
+  <!-- ============================================================ -->
+  <!-- VIEW 1: CUSTOMER MOBILE & TABLE MENU                         -->
+  <!-- ============================================================ -->
+  <div id="app-customer">
+    <!-- Offline Notice Banner (Shows automatically if connection drops) -->
+    <div class="offline-notice-banner" id="offline-notice-banner" style="display:none;">
+      <span>⚡ <strong>Offline Mode Active:</strong> Full menu and cart are ready offline. Orders placed now will sync to the kitchen upon reconnect.</span>
+    </div>
+
+    <main class="customer-container">
+
+      <!-- Hero Header with Authentic Wall Photo -->
+      <section class="customer-hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="restaurant-badge-row">
+            <div class="table-tag" id="customer-table-tag">
+              <span>🍽️ Table 4</span>
+            </div>
+            <div class="hero-actions">
+              <button class="service-btn" id="btn-view-tracker" onclick="customerApp.openTrackerModal()">
+                🔔 Track Order
+              </button>
+              <button class="service-btn" id="btn-order-history" onclick="customerApp.openOrderHistory()">
+                🧾 Order History
+              </button>
+              <button class="service-btn btn-budget-guide" onclick="customerApp.openBudgetModal()">
+                💡 Budget Guide
+              </button>
+              <button class="service-btn" id="btn-call-waiter">
+                🛎️ Call Service
+              </button>
+            </div>
+          </div>
+
+          <div class="hero-brand-title">
+            <h1>Coffee Culture</h1>
+            <span class="hero-tagline-sub">The Ristorante Lounge • Jabalpur</span>
+          </div>
+          <p class="hero-description">Artisanal Coffees • Gourmet Sizzlers • Hand-Tossed Pizzas • Italian Pastas</p>
+
+          <!-- Quick Budget & Offer Pills -->
+          <div class="hero-quick-promos">
+            <div class="promo-pill-item" onclick="customerApp.filterByBudget('promo')">
+              🏷️ <strong>₹40 Offers:</strong> Promo Coffee, Fries, Pizza &amp; Maggi
+            </div>
+            <div class="promo-pill-item" onclick="customerApp.filterByBudget('hangout')">
+              ☕ <strong>Light Hangout:</strong> ₹250–₹400 / person
+            </div>
+            <div class="promo-pill-item" onclick="customerApp.filterByBudget('meal')">
+              🍽️ <strong>Full Meal:</strong> ₹450–₹700 / person
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sticky Filters & Search -->
+      <div class="sticky-filter-wrapper">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="menu-search-input" placeholder="Search coffee, sizzlers, pizza, pasta, fries..." autocomplete="off">
+        </div>
+
+        <!-- Category Scroll Bar -->
+        <div class="category-scroll">
+          <button class="cat-pill active" data-category="all">☕ All Items</button>
+          <button class="cat-pill promo-pill" data-category="promo_deals">🏷️ ₹40 Promo Deals</button>
+          <button class="cat-pill" data-category="coffees_drinks">☕ Coffees &amp; Cold Drinks</button>
+          <button class="cat-pill" data-category="starters">🍟 Starters &amp; Snacks</button>
+          <button class="cat-pill" data-category="burgers_sandwiches">🍔 Burgers &amp; Sandwiches</button>
+          <button class="cat-pill" data-category="pizzas">🍕 Artisanal Pizzas</button>
+          <button class="cat-pill" data-category="pastas">🍝 Italian Pastas</button>
+          <button class="cat-pill" data-category="sizzlers_mains">🔥 Sizzlers &amp; Mains</button>
+          <button class="cat-pill" data-category="salads">🥗 Fresh Salads</button>
+          <button class="cat-pill" data-category="desserts">🍨 Desserts &amp; Bakery</button>
+        </div>
+
+        <!-- Dietary Filters -->
+        <div class="dietary-tags-row">
+          <button class="diet-pill active" data-diet="all">All Dietary</button>
+          <button class="diet-pill" data-diet="veg">🟢 Pure Veg</button>
+          <button class="diet-pill" data-diet="non-veg">🔴 Non-Veg</button>
+          <button class="diet-pill" data-diet="vegan">🌱 Vegan</button>
+        </div>
+      </div>
+
+      <!-- Menu Items Container -->
+      <div id="menu-items-container"></div>
+
+      <!-- Floating Cart Bar -->
+      <div class="floating-cart-bar" id="floating-cart-bar">
+        <div class="cart-bar-left">
+          <span class="cart-badge-count" id="cart-bar-count">0</span>
+          <div>
+            <div class="cart-bar-title">Review Table Order</div>
+            <div class="cart-bar-subtitle">Tap to customize &amp; dispatch to kitchen</div>
+          </div>
+        </div>
+        <div class="cart-bar-right" id="cart-bar-total">₹0 →</div>
+      </div>
+    </main>
+  </div><!-- /#app-customer -->
+
+
+  <!-- ============================================================ -->
+  <!-- VIEW 2: OWNER & KITCHEN DASHBOARD PANELS                     -->
+  <!-- ============================================================ -->
+  <div id="app-owner" style="display:none;">
+    <div class="owner-main-container">
+
+      <!-- Top Title Bar -->
+      <div class="panel-top-navigation">
+        <div class="panel-nav-title" id="global-page-title">👨‍🍳 Live Kitchen Display</div>
+        <div class="panel-nav-actions">
+          <button class="btn-subnav-pill" onclick="window.appRouter.switchView('kitchen')">👨‍🍳 Kitchen KDS</button>
+          <button class="btn-subnav-pill" onclick="window.appRouter.switchView('qr')">🏷️ QR Standees</button>
+          <button class="btn-subnav-pill" onclick="window.appRouter.switchView('overview')">📊 Revenue &amp; Stats</button>
+          <button class="btn-subnav-pill" onclick="window.appRouter.switchView('menu')">📋 Menu Manager</button>
+          <button class="btn-subnav-pill highlight" onclick="window.appRouter.switchView('customer')">📱 Switch to Menu</button>
+          <button class="btn-subnav-pill" id="owner-logout-btn">🔒 Lock</button>
+        </div>
+      </div>
+
+      <!-- ── PANEL: Live Kitchen KDS ── -->
+      <section class="owner-panel active" id="panel-kitchen">
+        <div class="panel-header">
+          <div>
+            <h1 class="panel-title">👨‍🍳 Live Kitchen Display System (KDS)</h1>
+            <p class="panel-sub">Real-time order tickets with automatic prep timers &amp; chime alerts</p>
+          </div>
+          <div class="kds-quick-stats">
+            <span class="kds-stat-pill">📍 Outlet: Sadar, Jabalpur</span>
+            <span class="kds-stat-pill" id="kds-active-indicator">🟢 Live Order Sync</span>
+          </div>
+        </div>
+
+        <div class="kanban-board">
+          <!-- Pending Column -->
+          <div class="kanban-col">
+            <div class="col-header">
+              <div class="col-title"><span>📬</span> New Orders</div>
+              <span class="col-badge" id="count-pending">0</span>
+            </div>
+            <div class="col-cards-list" id="kanban-pending-list"></div>
+          </div>
+
+          <!-- Preparing Column -->
+          <div class="kanban-col">
+            <div class="col-header">
+              <div class="col-title"><span>👨‍🍳</span> Crafting</div>
+              <span class="col-badge" id="count-preparing">0</span>
+            </div>
+            <div class="col-cards-list" id="kanban-preparing-list"></div>
+          </div>
+
+          <!-- Ready Column -->
+          <div class="kanban-col">
+            <div class="col-header">
+              <div class="col-title"><span>🔔</span> Ready to Serve</div>
+              <span class="col-badge" id="count-ready">0</span>
+            </div>
+            <div class="col-cards-list" id="kanban-ready-list"></div>
+          </div>
+
+          <!-- Completed Column -->
+          <div class="kanban-col">
+            <div class="col-header">
+              <div class="col-title"><span>✅</span> Fulfilled</div>
+              <span class="col-badge" id="count-completed">0</span>
+            </div>
+            <div class="col-cards-list" id="kanban-completed-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── PANEL: QR Code Hub ── -->
+      <section class="owner-panel" id="panel-qr">
+        <div class="panel-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="panel-title">🏷️ Coffee Culture QR Standee Hub</h1>
+            <p class="panel-sub">Scannable table QR codes styled for luxury tent stands across Jabalpur lounge</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--text-muted);background:var(--bg-surface-elevated);padding:8px 14px;border-radius:var(--radius-full);border:1px solid var(--border-subtle);cursor:pointer;">
+              <input type="checkbox" id="qr-ip-toggle">
+              <span>Use Wi-Fi Network IP</span>
+            </label>
+            <button class="primary-action-btn" style="width:auto;padding:8px 18px;font-size:0.85rem;" id="btn-print-all-tents">
+              🖨️ Print All Table Standees
+            </button>
+          </div>
+        </div>
+        <div class="qr-grid" id="qr-cards-grid"></div>
+      </section>
+
+      <!-- ── PANEL: Overview ── -->
+      <section class="owner-panel" id="panel-overview">
+        <div class="panel-header">
+          <h1 class="panel-title">📊 Coffee Culture Dashboard Overview</h1>
+          <p class="panel-sub">Daily sales, active table turnaround &amp; service alerts</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(224,159,62,.15);color:var(--primary);">💰</div>
+            <div>
+              <div class="stat-val" id="stat-total-revenue">₹0</div>
+              <div class="stat-label">Today's Revenue</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(249,115,22,.15);color:var(--accent-orange);">🔥</div>
+            <div>
+              <div class="stat-val" id="stat-active-orders">0</div>
+              <div class="stat-label">Active in Kitchen</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(16,185,129,.15);color:var(--accent-emerald);">🔔</div>
+            <div>
+              <div class="stat-val" id="stat-ready-orders">0</div>
+              <div class="stat-label">Ready to Serve</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(56,189,248,.15);color:var(--accent-blue);">🍽️</div>
+            <div>
+              <div class="stat-val" id="stat-active-tables">0</div>
+              <div class="stat-label">Occupied Tables</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(168,85,247,.15);color:var(--accent-purple);">📦</div>
+            <div>
+              <div class="stat-val" id="stat-total-orders">0</div>
+              <div class="stat-label">Total Orders Today</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(244,63,94,.15);color:var(--accent-rose);">⚠️</div>
+            <div>
+              <div class="stat-val" id="stat-pending-alerts">0</div>
+              <div class="stat-label">Waiter Service Alerts</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service Alerts in Overview -->
+        <div id="dash-service-alerts" class="service-alerts-wrapper" style="margin-top:16px;"></div>
+
+        <!-- Recent Orders in Overview -->
+        <div class="panel-section-box" style="margin-top:24px;">
+          <div class="section-box-header">
+            <h2>🕐 Today's Recent Orders</h2>
+          </div>
+          <div id="overview-recent-orders"></div>
+        </div>
+      </section>
+
+      <!-- ── PANEL: Menu Manager ── -->
+      <section class="owner-panel" id="panel-menu">
+        <div class="panel-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="panel-title">📋 Live Menu &amp; Stock Manager</h1>
+            <p class="panel-sub">Instant 1-tap stock availability toggle, prices in ₹, and new dish creator</p>
+          </div>
+          <button class="primary-action-btn" style="width:auto;padding:10px 20px;font-size:0.88rem;" onclick="document.getElementById('modal-add-dish').classList.add('active')">
+            ➕ Add New Cafe Item
+          </button>
+        </div>
+
+        <div class="panel-section-box" style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;text-align:left;font-size:0.88rem;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border-subtle);color:var(--text-muted);font-size:0.78rem;text-transform:uppercase;">
+                <th style="padding:10px 12px;">Dish / Item</th>
+                <th style="padding:10px 12px;">Dietary</th>
+                <th style="padding:10px 12px;">Price (₹)</th>
+                <th style="padding:10px 12px;">Stock Status</th>
+                <th style="padding:10px 12px;text-align:right;">Remove</th>
+              </tr>
+            </thead>
+            <tbody id="dash-menu-items-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /.owner-main-container -->
+  </div><!-- /#app-owner -->
+
+
+  <!-- ============================================================ -->
+  <!-- MODALS (Customer & Staff)                                    -->
+  <!-- ============================================================ -->
+
+  <!-- Budget Dining Guide Modal -->
+  <div class="modal-overlay" id="budget-modal">
+    <div class="drawer-sheet">
+      <div class="drawer-header">
+        <div class="drawer-title">💡 Coffee Culture Jabalpur — Budget Guide</div>
+        <button class="close-btn" id="close-budget-btn">&times;</button>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;line-height:1.4;">
+        Carefully calculated realistic budgeting breakdown for Coffee Culture – The Ristorante Lounge, Jabalpur:
+      </p>
+
+      <div class="budget-guide-cards">
+        <div class="budget-card" onclick="customerApp.filterByBudget('promo')">
+          <div class="budget-card-header">
+            <span class="budget-emoji">🏷️</span>
+            <strong>Special ₹40 Deals</strong>
+          </div>
+          <p class="budget-price-tag">Flat ₹40 / item</p>
+          <p class="budget-card-desc">Promotional flash deals: Cappuccino, Cold Coffee, Salted Fries, Personal Pizza, Burger, Maggi.</p>
+          <button class="budget-action-btn">Filter ₹40 Promo Deals</button>
+        </div>
+
+        <div class="budget-card" onclick="customerApp.filterByBudget('hangout')">
+          <div class="budget-card-header">
+            <span class="budget-emoji">☕</span>
+            <strong>Light Hangout</strong>
+          </div>
+          <p class="budget-price-tag">~₹250–₹400 / person</p>
+          <p class="budget-card-desc">Handcrafted Coffee / Chilled Frappe + Cheesy Garlic Bread / French Fries / Maggi.</p>
+          <button class="budget-action-btn">Browse Hangout Snacks</button>
+        </div>
+
+        <div class="budget-card" onclick="customerApp.filterByBudget('meal')">
+          <div class="budget-card-header">
+            <span class="budget-emoji">🍽️</span>
+            <strong>Full Meal Experience</strong>
+          </div>
+          <p class="budget-price-tag">~₹450–₹700 / person</p>
+          <p class="budget-card-desc">Starter snack + Signature Sizzler / Italian Pasta / Loaded Pizza + Specialty Drink.</p>
+          <button class="budget-action-btn">Browse Mains &amp; Sizzlers</button>
+        </div>
+
+        <div class="budget-card" onclick="customerApp.filterByBudget('meal')">
+          <div class="budget-card-header">
+            <span class="budget-emoji">💑</span>
+            <strong>Couple / Friends Combo</strong>
+          </div>
+          <p class="budget-price-tag">~₹900–₹1,300 total (2 people)</p>
+          <p class="budget-card-desc">2 Artisan Coffees/Drinks + 2 Mains/Sizzlers/Pizzas + 1 Sizzling Brownie with Ice Cream.</p>
+          <button class="budget-action-btn">Plan Couple Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dish Customizer -->
+  <div class="modal-overlay" id="customizer-modal">
+    <div class="drawer-sheet">
+      <div class="drawer-header">
+        <div class="drawer-title">Customize Item</div>
+        <button class="close-btn" id="close-customizer-btn">&times;</button>
+      </div>
+      <div style="width:100%;height:180px;border-radius:var(--radius-md);overflow:hidden;margin-bottom:14px;">
+        <img id="customizer-img" src="" style="width:100%;height:100%;object-fit:cover;" />
+      </div>
+      <h3 id="customizer-name" style="font-size:1.25rem;font-weight:800;margin-bottom:4px;"></h3>
+      <p id="customizer-desc" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:14px;line-height:1.4;"></p>
+      <div id="customizer-base-price" style="font-size:1.3rem;font-weight:800;color:var(--primary);margin-bottom:16px;"></div>
+      <div id="customizer-addons-list" style="margin-bottom:16px;"></div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:0.85rem;font-weight:700;display:block;margin-bottom:6px;">Barista / Chef Special Instructions:</label>
+        <textarea id="customizer-notes" placeholder="e.g. Extra hot, less ice, extra crispy fries, no onions..." style="width:100%;background:var(--bg-surface-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:10px;color:#fff;font-family:inherit;font-size:0.85rem;resize:vertical;min-height:60px;"></textarea>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;">
+        <div class="qty-control" style="padding:6px 12px;background:var(--bg-surface-elevated);">
+          <button class="qty-btn" onclick="customerApp.adjustCustomizerQty(-1)">-</button>
+          <span class="qty-val" id="customizer-qty-val" style="font-size:1rem;padding:0 10px;">1</span>
+          <button class="qty-btn" onclick="customerApp.adjustCustomizerQty(1)">+</button>
+        </div>
+        <button class="primary-action-btn" onclick="customerApp.confirmAddToCart()" style="flex:1;">Add to Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Drawer -->
+  <div class="modal-overlay" id="cart-drawer-modal">
+    <div class="drawer-sheet">
+      <div class="drawer-header">
+        <div class="drawer-title">Your Table Order Summary</div>
+        <button class="close-btn" id="close-cart-btn">&times;</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Dining Table</label>
+          <input type="text" id="order-table-input" value="Table 4" readonly style="width:100%;background:var(--bg-surface-elevated);border:1px solid var(--border-subtle);padding:8px 12px;border-radius:var(--radius-sm);color:var(--primary);font-weight:700;">
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Guest Name (Optional)</label>
+          <input type="text" id="customer-name-input" placeholder="e.g. Sarthak" style="width:100%;background:var(--bg-surface-elevated);border:1px solid var(--border-subtle);padding:8px 12px;border-radius:var(--radius-sm);color:#fff;">
+        </div>
+      </div>
+      <div class="cart-items-list" id="cart-items-container"></div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:0.8rem;font-weight:700;display:block;margin-bottom:4px;">Table Request Note:</label>
+        <input type="text" id="order-special-instructions" placeholder="e.g. Bring cold coffee first, celebrating hangout" style="width:100%;background:var(--bg-surface-elevated);border:1px solid var(--border-subtle);padding:8px 12px;border-radius:var(--radius-sm);color:#fff;font-size:0.85rem;">
+      </div>
+      <div class="tip-section">
+        <div class="tip-label">Optional Tip for the Cafe Team:</div>
+        <div class="tip-options">
+          <button class="tip-btn" data-tip="5">5%</button>
+          <button class="tip-btn active" data-tip="10">10%</button>
+          <button class="tip-btn" data-tip="15">15%</button>
+          <button class="tip-btn" data-tip="0">No Tip</button>
+        </div>
+      </div>
+      <div class="bill-summary">
+        <div class="bill-row"><span>Items Subtotal</span><span id="bill-subtotal">₹0</span></div>
+        <div class="bill-row"><span>GST (5%)</span><span id="bill-tax">₹0</span></div>
+        <div class="bill-row"><span>Tip</span><span id="bill-tip">₹0</span></div>
+        <div class="bill-row total"><span>Grand Total</span><span id="bill-grand-total">₹0</span></div>
+      </div>
+      <button class="primary-action-btn" id="btn-submit-order">
+        ☕ Send Order Directly to Kitchen
+      </button>
+    </div>
+  </div>
+
+  <!-- Live Order Tracker -->
+  <div class="modal-overlay" id="tracker-modal">
+    <div class="drawer-sheet">
+      <div class="drawer-header">
+        <div class="drawer-title">Live Kitchen Tracker</div>
+        <button class="close-btn" id="close-tracker-btn">&times;</button>
+      </div>
+      <div class="tracker-status-box">
+        <div class="tracker-anim-icon" id="tracker-status-icon">👨‍🍳</div>
+        <h2 id="tracker-status-title" style="font-size:1.4rem;font-weight:800;margin-bottom:6px;">Order In Kitchen</h2>
+        <p id="tracker-status-desc" style="font-size:0.88rem;color:var(--text-muted);">Our chefs are crafting your meal with fresh ingredients.</p>
+      </div>
+      <div class="stepper-timeline">
+        <div class="step-item" id="step-pending"><div class="step-circle">1</div><div class="step-title">Received</div></div>
+        <div class="step-item active" id="step-preparing"><div class="step-circle">2</div><div class="step-title">Crafting</div></div>
+        <div class="step-item" id="step-ready"><div class="step-circle">3</div><div class="step-title">Ready</div></div>
+        <div class="step-item" id="step-completed"><div class="step-circle">4</div><div class="step-title">Served</div></div>
+      </div>
+      <div style="background:var(--bg-surface-elevated);padding:16px;border-radius:var(--radius-md);margin-top:20px;">
+        <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:10px;border-bottom:1px solid var(--border-subtle);padding-bottom:8px;">
+          <span>Order: <span id="tracker-order-number">#1001</span></span>
+          <span style="color:var(--primary);" id="tracker-order-total">₹0</span>
+        </div>
+        <div id="tracker-items-list"></div>
+      </div>
+      <button class="secondary-action-btn" id="btn-cancel-order" style="width:100%;margin-top:14px;display:none;">Cancel Order</button>
+    </div>
+  </div>
+
+  <!-- Customer Order History -->
+  <div class="modal-overlay" id="order-history-modal">
+    <div class="drawer-sheet">
+      <div class="drawer-header">
+        <div class="drawer-title">Your Order History</div>
+        <button class="close-btn" id="close-order-history-btn">&times;</button>
+      </div>
+      <div id="order-history-list"></div>
+    </div>
+  </div>
+
+  <!-- Service Request Modal -->
+  <div class="modal-overlay" id="service-modal">
+    <div class="drawer-sheet">
+      <div class="drawer-header">
+        <div class="drawer-title">Table Assistance &amp; Service</div>
+        <button class="close-btn" id="close-service-btn">&times;</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:10px 0;">
+        <button class="service-request-btn" onclick="customerApp.sendServiceRequest('waiter')">🙋‍♂️ Call Server to Table</button>
+        <button class="service-request-btn" onclick="customerApp.sendServiceRequest('water')">💧 Request Fresh Water &amp; Napkins</button>
+        <button class="service-request-btn" onclick="customerApp.sendServiceRequest('bill')">💳 Request Final Bill &amp; Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Dish Modal (Staff) -->
+  <div class="modal-overlay" id="modal-add-dish">
+    <div class="drawer-sheet">
+      <div class="drawer-header">
+        <div class="drawer-title">Add New Dish to Coffee Culture Menu</div>
+        <button class="close-btn" onclick="document.getElementById('modal-add-dish').classList.remove('active')">&times;</button>
+      </div>
+      <form id="form-add-dish" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label class="form-label">Item Name</label>
+          <input type="text" id="dish-new-name" required placeholder="e.g. Sizzling Paneer Shashlik" class="form-input">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label class="form-label">Category</label>
+            <select id="dish-new-cat" class="form-input">
+              <option value="coffees_drinks">Coffees &amp; Cold Drinks</option>
+              <option value="starters">Starters &amp; Snacks</option>
+              <option value="burgers_sandwiches">Burgers &amp; Sandwiches</option>
+              <option value="pizzas">Artisanal Pizzas</option>
+              <option value="pastas">Italian Pastas</option>
+              <option value="sizzlers_mains">Sizzlers &amp; Mains</option>
+              <option value="salads">Fresh Salads</option>
+              <option value="desserts">Desserts &amp; Bakery</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Price (₹)</label>
+            <input type="number" step="1" id="dish-new-price" required placeholder="180" class="form-input">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label class="form-label">Dietary</label>
+            <select id="dish-new-diet" class="form-input">
+              <option value="veg">Vegetarian</option>
+              <option value="non-veg">Non-Veg</option>
+              <option value="vegan">Vegan</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Image URL (Optional)</label>
+            <input type="url" id="dish-new-img" placeholder="https://images.unsplash.com/..." class="form-input">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Description</label>
+          <textarea id="dish-new-desc" rows="2" placeholder="Rich description of ingredients & flavors..." class="form-input" style="resize:vertical;"></textarea>
+        </div>
+        <button type="submit" class="primary-action-btn" style="margin-top:10px;">✨ Publish Item to Live Menu</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Print Standees Container (hidden except on print) -->
+  <div id="print-tents-container" style="display:none;"></div>
+
+  <!-- Scripts -->
+  <script src="js/sound.js"></script>
+  <script src="js/customer.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/qr-generator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

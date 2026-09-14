@@ -1,0 +1,18 @@
+{
+  "name": "Coffee Culture – The Ristorante Lounge",
+  "short_name": "Coffee Culture",
+  "description": "Artisanal Coffees, Sizzlers & Italian Delights — Jabalpur",
+  "start_url": "/?table=1",
+  "display": "standalone",
+  "background_color": "#140d09",
+  "theme_color": "#e09f3e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/coffee_culture_wall.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
