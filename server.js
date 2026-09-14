@@ -6,6 +6,7 @@ const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
+const { initializeDatabase, loadState, saveState } = require('./db');
 
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 const OWNER_ID = process.env.OWNER_ID || 'owner';
@@ -900,6 +901,39 @@ let banquetLeads = [
   }
 ];
 
+function getPersistedState() {
+  return {
+    menuItems,
+    tables,
+    orders,
+    revenueLedger,
+    dailyRevenueHistory,
+    serviceRequests,
+    banquetLeads,
+    orderCounter
+  };
+}
+
+async function persistState() {
+  await saveState(getPersistedState());
+}
+
+async function restorePersistedState() {
+  const state = await loadState();
+  if (!state) {
+    await persistState();
+    return;
+  }
+  menuItems = Array.isArray(state.menuItems) ? state.menuItems : menuItems;
+  tables = Array.isArray(state.tables) ? state.tables : tables;
+  orders = Array.isArray(state.orders) ? state.orders : orders;
+  revenueLedger = Array.isArray(state.revenueLedger) ? state.revenueLedger : revenueLedger;
+  dailyRevenueHistory = Array.isArray(state.dailyRevenueHistory) ? state.dailyRevenueHistory : dailyRevenueHistory;
+  serviceRequests = Array.isArray(state.serviceRequests) ? state.serviceRequests : serviceRequests;
+  banquetLeads = Array.isArray(state.banquetLeads) ? state.banquetLeads : banquetLeads;
+  orderCounter = Number(state.orderCounter) || orderCounter;
+}
+
 // -------------------------------------------------------------
 // WebSocket Real-Time Broadcast Hub
 // -------------------------------------------------------------
@@ -936,7 +970,10 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
-      handleWsMessage(ws, data);
+      handleWsMessage(ws, data).catch(err => {
+        console.error('Error handling WS message:', err);
+        ws.send(JSON.stringify({ type: 'SERVER_ERROR', error: 'Could not save that change' }));
+      });
     } catch (err) {
       console.error('Error parsing WS message:', err);
     }
@@ -945,7 +982,7 @@ wss.on('connection', (ws, req) => {
   ws.on('error', (err) => console.error('WS client error:', err));
 });
 
-function handleWsMessage(ws, data) {
+async function handleWsMessage(ws, data) {
   if (data.type === 'AUTH_OWNER') {
     ws.isOwner = passwordsMatch(data.password);
     ws.send(JSON.stringify({ type: 'OWNER_AUTH_RESULT', authenticated: ws.isOwner }));
@@ -989,6 +1026,7 @@ function handleWsMessage(ws, data) {
       // Update table status
       const table = tables.find(t => t.id === newOrder.tableId);
       if (table) table.status = "occupied";
+      await persistState();
 
       // Acknowledge back to sender with created order object
       ws.send(JSON.stringify({
@@ -1023,6 +1061,7 @@ function handleWsMessage(ws, data) {
           }
         }
         recordCompletedOrder(order);
+        await persistState();
 
         broadcast({
           type: 'ORDER_STATUS_CHANGED',
@@ -1046,6 +1085,7 @@ function handleWsMessage(ws, data) {
         resolved: false
       };
       serviceRequests.unshift(newReq);
+      await persistState();
       broadcast({
         type: 'NEW_SERVICE_REQUEST',
         serviceRequest: newReq
@@ -1063,6 +1103,7 @@ function handleWsMessage(ws, data) {
         createdAt: new Date().toISOString()
       };
       banquetLeads.unshift(newLead);
+      await persistState();
       broadcast({
         type: 'NEW_BANQUET_LEAD',
         lead: newLead
@@ -1075,6 +1116,7 @@ function handleWsMessage(ws, data) {
       const req = serviceRequests.find(r => r.id === requestId);
       if (req) {
         req.resolved = true;
+        await persistState();
         broadcast({
           type: 'SERVICE_REQUEST_RESOLVED',
           requestId: requestId
@@ -1088,6 +1130,7 @@ function handleWsMessage(ws, data) {
       const item = menuItems.find(i => i.id === itemId);
       if (item) {
         item.isAvailable = (isAvailable !== undefined) ? isAvailable : !item.isAvailable;
+        await persistState();
         broadcast({
           type: 'MENU_ITEM_UPDATED',
           item: item
@@ -1101,6 +1144,7 @@ function handleWsMessage(ws, data) {
       const index = menuItems.findIndex(i => i.id === item.id);
       if (index !== -1) {
         menuItems[index] = { ...menuItems[index], ...item };
+        await persistState();
         broadcast({
           type: 'MENU_ITEM_UPDATED',
           item: menuItems[index]
@@ -1126,6 +1170,7 @@ function handleWsMessage(ws, data) {
         addons: item.addons || []
       };
       menuItems.push(newItem);
+      await persistState();
       broadcast({
         type: 'MENU_UPDATED',
         menu: menuItems
@@ -1136,6 +1181,7 @@ function handleWsMessage(ws, data) {
     case 'DELETE_MENU_ITEM': {
       const { itemId } = data;
       menuItems = menuItems.filter(i => i.id !== itemId);
+      await persistState();
       broadcast({
         type: 'MENU_UPDATED',
         menu: menuItems
@@ -1225,7 +1271,7 @@ app.get('/api/orders', requireOwner, (req, res) => {
   res.json(orders);
 });
 
-app.post('/api/day/reset', requireOwner, (req, res) => {
+app.post('/api/day/reset', requireOwner, async (req, res) => {
   const day = new Date().toISOString().slice(0, 10);
   const revenue = orders
     .filter(order => order.status === 'completed')
@@ -1237,11 +1283,12 @@ app.post('/api/day/reset', requireOwner, (req, res) => {
   serviceRequests = [];
   orderCounter = 1001;
   tables.forEach(table => { table.status = 'available'; });
+  await persistState();
   broadcast({ type: 'INIT_SYNC', menu: menuItems, orders, tables, serviceRequests, banquetLeads });
   res.json({ reset: true, message: 'New day started. Orders and service alerts cleared.' });
 });
 
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
   const newOrder = {
     id: `ord-${Date.now()}`,
     orderNumber: `#${1000 + orders.length + 1}`,
@@ -1253,6 +1300,7 @@ app.post('/api/orders', (req, res) => {
   orders.push(newOrder);
   const table = tables.find(t => t.id === String(newOrder.tableId));
   if (table) table.status = "occupied";
+  await persistState();
   broadcast({
     type: 'NEW_ORDER',
     order: newOrder,
@@ -1261,7 +1309,7 @@ app.post('/api/orders', (req, res) => {
   res.status(201).json(newOrder);
 });
 
-app.post('/api/orders/:orderId/cancel', (req, res) => {
+app.post('/api/orders/:orderId/cancel', async (req, res) => {
   const order = orders.find(item => item.id === req.params.orderId);
   if (!order) return res.status(404).json({ error: 'Order not found' });
   if (String(req.body.tableId || '') !== String(order.tableId)) {
@@ -1273,6 +1321,7 @@ app.post('/api/orders/:orderId/cancel', (req, res) => {
 
   order.status = 'cancelled';
   order.updatedAt = new Date().toISOString();
+  await persistState();
   broadcast({ type: 'ORDER_STATUS_CHANGED', order, tables });
   res.json(order);
 });
@@ -1324,7 +1373,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-if (require.main === module) {
+async function startServer() {
+  if (process.env.DATABASE_URL) {
+    await initializeDatabase();
+    await restorePersistedState();
+    console.log('PostgreSQL persistence enabled.');
+  } else {
+    console.warn('DATABASE_URL is not set. Running with in-memory data only.');
+  }
+
   server.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`🍽️  QR RESTAURANT ORDERING & OWNER DASHBOARD IS LIVE!`);
@@ -1335,6 +1392,13 @@ if (require.main === module) {
     console.log(`📋 Customer T4:  http://localhost:${PORT}/?table=4`);
     console.log(`🏷️  QR Hub:       http://localhost:${PORT}/?view=qr-hub`);
     console.log(`=======================================================`);
+  });
+}
+
+if (require.main === module) {
+  startServer().catch(error => {
+    console.error('Could not start server:', error);
+    process.exit(1);
   });
 }
 
