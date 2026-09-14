@@ -12,6 +12,7 @@ class DashboardApp {
     this.serviceRequests = [];
     this._ready = true; // Enabled for seamless access
     this.isAdminRoute = window.location.pathname === '/admin';
+    this.refreshTimer = null;
 
     if (this.isAdminRoute && window.appRouter?.ownerAuthenticated) {
       this.connectWebSocket();
@@ -25,6 +26,26 @@ class DashboardApp {
     this._ready = true;
     this.loadOfflineOrdersIntoDashboard();
     this.renderAll();
+  }
+
+  startOrderRefresh() {
+    if (this.refreshTimer) return;
+    this.refreshOrders();
+    this.refreshTimer = setInterval(() => this.refreshOrders(), 5000);
+  }
+
+  async refreshOrders() {
+    try {
+      const response = await fetch('/api/orders', { credentials: 'same-origin' });
+      if (!response.ok) return;
+      const orders = await response.json();
+      if (Array.isArray(orders)) {
+        this.orders = orders;
+        this.renderAll();
+      }
+    } catch (error) {
+      console.warn('Dashboard order refresh unavailable:', error);
+    }
   }
 
   loadOfflineOrdersIntoDashboard() {
@@ -45,7 +66,10 @@ class DashboardApp {
     try {
       this.ws = new WebSocket(`${protocol}//${window.location.host}`);
 
-      this.ws.onopen = () => console.log('☕ Dashboard WS connected');
+      this.ws.onopen = () => {
+        console.log('☕ Dashboard WS connected');
+        this.startOrderRefresh();
+      };
 
       this.ws.onmessage = (event) => {
         try { this.handleWsEvent(JSON.parse(event.data)); }
