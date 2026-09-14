@@ -67,6 +67,10 @@ class AppRouter {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ownerId, password })
         });
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('The deployed backend is blocked by Vercel Deployment Protection. Disable protection for this deployment or use the production domain.');
+        }
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Login failed');
         this.ownerAuthenticated = true;
