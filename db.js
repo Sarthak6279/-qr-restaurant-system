@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 
 const connectionString = process.env.DATABASE_URL;
-const pool = connectionString
+let pool = connectionString
   ? new Pool({
       connectionString,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
@@ -10,13 +10,20 @@ const pool = connectionString
 
 async function initializeDatabase() {
   if (!pool) return false;
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS app_state (
-      id INTEGER PRIMARY KEY,
-      data JSONB NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS app_state (
+        id INTEGER PRIMARY KEY,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+  } catch (error) {
+    console.error('PostgreSQL is unreachable. Starting with in-memory data until DATABASE_URL is corrected:', error.message);
+    await pool.end().catch(() => {});
+    pool = null;
+    return false;
+  }
   return true;
 }
 

@@ -1375,9 +1375,11 @@ app.get('*', (req, res) => {
 
 async function startServer() {
   if (process.env.DATABASE_URL) {
-    await initializeDatabase();
-    await restorePersistedState();
-    console.log('PostgreSQL persistence enabled.');
+    const databaseReady = await initializeDatabase();
+    if (databaseReady) {
+      await restorePersistedState();
+      console.log('PostgreSQL persistence enabled.');
+    }
   } else {
     console.warn('DATABASE_URL is not set. Running with in-memory data only.');
   }
