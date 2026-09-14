@@ -61,7 +61,9 @@ class QrHubApp {
   getBaseUrl() {
     if (this.useNetworkIp && this.networkInfo) return this.networkInfo.networkUrl;
     if (this.networkInfo && this.networkInfo.publicUrl) return this.networkInfo.publicUrl;
-    return this.networkInfo?.networkUrl || window.location.origin;
+    const hostname = window.location.hostname;
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
+    return !isLocalHost ? window.location.origin : (this.networkInfo?.networkUrl || window.location.origin);
   }
 
   getQrSrc(tableId) {

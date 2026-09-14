@@ -1306,7 +1306,7 @@ app.get('/api/network-info', (req, res) => {
 app.get('/api/qr/:tableId', async (req, res) => {
   const baseUrl = req.query.mode === 'network'
     ? `http://${localIp}:${PORT}`
-    : (PUBLIC_URL || `http://${localIp}:${PORT}`);
+    : (PUBLIC_URL || `${req.protocol}://${req.get('host')}`);
   const targetUrl = `${baseUrl}/?table=${encodeURIComponent(req.params.tableId)}`;
 
   try {
