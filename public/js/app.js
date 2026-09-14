@@ -37,14 +37,13 @@ class AppRouter {
 
     this.checkOwnerSession().then(() => {
       this.routeInitialView();
-      if (this.isAdminRoute && this.ownerAuthenticated) {
+      if (this.ownerAuthenticated) {
         window.dashboardApp?.connectWebSocket();
       }
     });
   }
 
   routeInitialView() {
-    if (!this.isAdminRoute) return this.switchView('customer');
     if (this.currentView === 'dashboard' || this.currentView === 'kitchen') return this.switchView('kitchen');
     if (this.currentView === 'qr' || this.currentView === 'qr-hub') return this.switchView('qr');
     if (this.currentView === 'overview') return this.switchView('overview');
@@ -251,9 +250,6 @@ class AppRouter {
   }
 
   switchView(viewName) {
-    if (!this.isAdminRoute && viewName !== 'customer' && viewName !== 'budget') {
-      return this.switchView('customer');
-    }
     if (viewName !== 'customer' && viewName !== 'budget' && !this.ownerAuthenticated) {
       this.pendingOwnerView = viewName;
       this.showOwnerLogin();
