@@ -1406,15 +1406,18 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start Server
-server.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(`🍽️  QR RESTAURANT ORDERING & OWNER DASHBOARD IS LIVE!`);
-  console.log(`=======================================================`);
-  console.log(`🚀 Local URL:    http://localhost:${PORT}`);
-  console.log(`📱 Wi-Fi Mobile: http://${localIp}:${PORT}`);
-  console.log(`👨‍🍳 Dashboard:   http://localhost:${PORT}/?view=dashboard`);
-  console.log(`📋 Customer T4:  http://localhost:${PORT}/?table=4`);
-  console.log(`🏷️  QR Hub:       http://localhost:${PORT}/?view=qr-hub`);
-  console.log(`=======================================================`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(`🍽️  QR RESTAURANT ORDERING & OWNER DASHBOARD IS LIVE!`);
+    console.log(`=======================================================`);
+    console.log(`🚀 Local URL:    http://localhost:${PORT}`);
+    console.log(`📱 Wi-Fi Mobile: http://${localIp}:${PORT}`);
+    console.log(`👨‍🍳 Dashboard:   http://localhost:${PORT}/?view=dashboard`);
+    console.log(`📋 Customer T4:  http://localhost:${PORT}/?table=4`);
+    console.log(`🏷️  QR Hub:       http://localhost:${PORT}/?view=qr-hub`);
+    console.log(`=======================================================`);
+  });
+}
+
+module.exports = app;
