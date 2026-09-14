@@ -11,6 +11,7 @@ class DashboardApp {
     this.tables = [];
     this.serviceRequests = [];
     this.monthlyRevenue = 0;
+    this.dailyRevenueHistory = [];
     this._ready = true; // Enabled for seamless access
     this.isAdminRoute = window.location.pathname === '/admin';
     this.refreshTimer = null;
@@ -58,6 +59,11 @@ class DashboardApp {
       const stats = await response.json();
       this.monthlyRevenue = Number(stats.monthlyRevenue || 0);
       this.renderStats();
+      const historyResponse = await fetch('/api/revenue/history', { credentials: 'same-origin' });
+      if (historyResponse.ok) {
+        this.dailyRevenueHistory = await historyResponse.json();
+        this.renderRevenueHistory();
+      }
     } catch (error) {
       console.warn('Dashboard stats refresh unavailable:', error);
     }
@@ -72,8 +78,17 @@ class DashboardApp {
     }
     this.orders = [];
     this.serviceRequests = [];
+    await this.refreshStats();
     this.renderAll();
-    alert('New day started. Monthly revenue is preserved.');
+    alert('New day started. Previous day revenue has been saved.');
+  }
+
+  renderRevenueHistory() {
+    const target = document.getElementById('previous-day-revenue');
+    if (!target) return;
+    target.innerHTML = this.dailyRevenueHistory.length
+      ? this.dailyRevenueHistory.map(day => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-subtle);"><span>${day.date}</span><strong>₹${Number(day.revenue || 0).toFixed(2)}</strong></div>`).join('')
+      : '<p style="color:var(--text-muted);">No previous day has been closed yet.</p>';
   }
 
   loadOfflineOrdersIntoDashboard() {

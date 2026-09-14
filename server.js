@@ -878,6 +878,7 @@ let tables = [
 
 let orders = [];
 let revenueLedger = [];
+let dailyRevenueHistory = [];
 
 let serviceRequests = [];
 
@@ -1225,6 +1226,13 @@ app.get('/api/orders', requireOwner, (req, res) => {
 });
 
 app.post('/api/day/reset', requireOwner, (req, res) => {
+  const day = new Date().toISOString().slice(0, 10);
+  const revenue = orders
+    .filter(order => order.status === 'completed')
+    .reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const existingDay = dailyRevenueHistory.find(item => item.date === day);
+  if (existingDay) existingDay.revenue = revenue;
+  else dailyRevenueHistory.unshift({ date: day, revenue, orders: orders.length });
   orders = [];
   serviceRequests = [];
   orderCounter = 1001;
@@ -1305,6 +1313,10 @@ app.get('/api/stats', requireOwner, (req, res) => {
     monthlyRevenue: monthlyRevenue.toFixed(2),
     topDishes
   });
+});
+
+app.get('/api/revenue/history', requireOwner, (req, res) => {
+  res.json(dailyRevenueHistory);
 });
 
 // Serve frontend for all unmatched GET routes
