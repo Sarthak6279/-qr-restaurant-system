@@ -72,6 +72,7 @@ class AppRouter {
         this.ownerAuthenticated = true;
         form.reset();
         this.hideOwnerLogin();
+        this.setOwnerMode();
         window.dashboardApp?.ws?.close();
         window.dashboardApp?.connectWebSocket();
         this.switchView(this.pendingOwnerView || 'kitchen');
@@ -93,6 +94,8 @@ class AppRouter {
   }
 
   showOwnerLogin() {
+    document.body.classList.add('admin-mode');
+    document.body.classList.remove('customer-public');
     this.closeMobileSidebar();
     document.getElementById('unified-sidebar')?.classList.add('sidebar-hidden');
     document.body.classList.add('sidebar-is-hidden');
@@ -112,7 +115,16 @@ class AppRouter {
     await fetch('/api/auth/logout', { method: 'POST' });
     window.dashboardApp?.ws?.close();
     this.ownerAuthenticated = false;
+    this.isAdminRoute = false;
+    document.body.classList.remove('admin-mode');
+    document.body.classList.add('customer-public');
     this.switchView('customer');
+  }
+
+  setOwnerMode() {
+    this.isAdminRoute = true;
+    document.body.classList.add('admin-mode');
+    document.body.classList.remove('customer-public');
   }
 
   registerServiceWorker() {
@@ -128,7 +140,15 @@ class AppRouter {
       item.addEventListener('click', (e) => {
         e.preventDefault();
         const targetView = item.dataset.targetView;
-        if (targetView === 'budget') {
+        if (targetView === 'owner-login') {
+          this.pendingOwnerView = 'kitchen';
+          if (this.ownerAuthenticated) {
+            this.setOwnerMode();
+            this.switchView('kitchen');
+          } else {
+            this.showOwnerLogin();
+          }
+        } else if (targetView === 'budget') {
           window.customerApp?.openBudgetModal();
         } else {
           this.switchView(targetView);

@@ -33,6 +33,10 @@
   display: none !important;
 }
 
+.customer-public .owner-login-nav {
+  display: flex !important;
+}
+
 /* Owner controls are opt-in and only shown on /admin. */
 body:not(.admin-mode) .header-quick-tabs,
 body:not(.admin-mode) #app-owner,

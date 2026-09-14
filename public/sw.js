@@ -2,7 +2,7 @@
 // COFFEE CULTURE — SERVICE WORKER FOR 100% OFFLINE FUNCTIONALITY
 // =========================================================================
 
-const CACHE_NAME = 'coffee-culture-cache-v14';
+const CACHE_NAME = 'coffee-culture-cache-v15';
 
 const STATIC_ASSETS = [
   '/',
